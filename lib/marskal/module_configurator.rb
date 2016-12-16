@@ -63,7 +63,11 @@ module Marskal
           yield(configuration)
         end
 
-      end
+        def config_override(p_options= {})
+          configuration.instance_values.merge(p_options).symbolize_keys
+        end
+
+        end
 
     end
 end

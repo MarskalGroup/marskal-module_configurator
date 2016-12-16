@@ -1,5 +1,14 @@
 # Changelog
 
+#### 0.1.2.wip - MAU `2016-12-15`  
+**Added Example DiceMethodOne example**
+
+* Added <tt>DiceMethodOne</tt> example
+* Added an /exe/mmc_play file to experiment with
+* Still lots of cleanup
+        
+---
+
 #### 0.1.1.wip - MAU `2016-12-15`  
 **Added a draft version of the configurator with examples**
 

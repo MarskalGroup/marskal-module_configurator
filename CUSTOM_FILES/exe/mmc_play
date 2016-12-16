@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+
+require 'examples'
+
+begin
+    params = eval("#{ARGV[0]}")
+    if params.nil?
+        puts DiceMethodOne.play()
+    else
+        puts DiceMethodOne.play(params)
+    end
+
+    exit!
+
+rescue Exception => error
+    puts "\nError: #{error.to_s}"
+    puts "\n\nUsage Examples:"
+    puts "\tmmc_play  \"{sides: 1, num_dice: 4}\""
+    puts "\tmmc_play"
+end
