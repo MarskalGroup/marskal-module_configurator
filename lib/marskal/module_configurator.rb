@@ -4,11 +4,19 @@ require 'active_support/concern'
 module Marskal
   module ModuleConfigurator
       extend ActiveSupport::Concern
+      attr_internal_accessor :added_dynamically
+
+      included do
+        @added_dynamically = []
+      end
+
       module ClassMethods
+
         CONFIGURATION_CLASS_NAME = 'Configuration'
         attr_accessor :configuration
 
         def setup(*attributes)
+          attributes.flatten!
           l_defaults = {}
           if attributes.length == 1 && attributes.first.is_a?(Hash)
             l_defaults = attributes.first
@@ -18,6 +26,8 @@ module Marskal
           unless self::const_defined?(CONFIGURATION_CLASS_NAME)
             self.const_set(CONFIGURATION_CLASS_NAME, Class.new { def new()  end })
           end
+
+          (@added_dynamically << attributes).flatten!.uniq
 
           attributes.each do |k|
             unless self.configuration.respond_to?("#{k.to_s}=")
@@ -56,6 +66,10 @@ module Marskal
         end
 
         def reset
+          attributes_added_dynamically.each do |l_attr|
+            configuration.remove_instance_variable(:"@#{l_attr}")
+          end
+          @added_dynamically = []
           @configuration = self::Configuration.new
         end
 
@@ -67,7 +81,10 @@ module Marskal
           configuration.instance_values.merge(p_options).symbolize_keys
         end
 
+        def attributes_added_dynamically
+          @added_dynamically.uniq!||[]
         end
 
+      end
     end
 end

@@ -1,5 +1,9 @@
 ##Todo list: Last updated `2016-12-12`  
 
+#### Left Off
+* Just got @added_after functioning
+* Need to Complete method 2 and then on to method 3
+
 #### Priorities
 
 * Move Code from marskal gem
@@ -9,9 +13,9 @@ and/or using the setup method to build it dynamically
 * Document and Test
 * minimize includes on active support
 * Make the attribute assigner an array method in core
-    * Attribute assigner on initialize would be cool
-    * Make the game sorter a core method
-    * Make a hash blank?
+    * Attribute assigner on initialize would be cool (Marskal Base Class ?)
+
+
     
 
 

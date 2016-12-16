@@ -1,18 +1,20 @@
 ##
-# This module is an example of using *Method 1* of the ModuleConfigurator.
+# This module is an example of using *Method 2* of the ModuleConfigurator.
 #
-# ==== Method 1
-# In Method 1 the configuration is defined by the calling(including) module
-# * The Required <tt>class Configuration</tt> is defined *completely* by the calling module.
+# ==== Method 2
+# In Method 2, as in Method 1, the configuration is defined by the calling(including) module.
+# However, we will add on attributes dynamically, after the initial configuration.
+# * The Required <tt>class Configuration</tt> is defined by the calling module.
+# * Additional config options/settings are added on afterwards
 # * The *calling module* is the module with the <tt>include Marskal::ModuleConfigurator</tt>
-# * In this case <tt>DiceMethodOne</tt> is the calling module
+# * In this case <tt>DiceMethodTwo</tt> is the calling module
 #
 # In this example we have a simple Dice Game to play. The winner is the first one to reach a target score.
 #
 # ==== History
 # * <tt>Created: 2016-12-16</tt> <b>Mike Urban</b> <mike@marskalgroup.com>
 #
-module DiceMethodOne
+module DiceMethodTwo
   include Marskal::ModuleConfigurator       #this will provide access to the ModuleConfigurator methods
 
   # Establish Default values for our configuration
@@ -23,6 +25,11 @@ module DiceMethodOne
       speed:        1,
       target_score: 100
   }
+
+  # These attributes will be added dynamically
+  NEW_SETTINGS = [:color, :material]
+
+
 
   ##
   # In Method one this module would be COMPLETELY responsible for the donfiguration variables.
@@ -37,7 +44,7 @@ module DiceMethodOne
   # * In this example we are not allowing any param overrides, but you could if you desired.
   #
   # ==== Examples
-  #  my_config = DiceMethodOne::Configuration.new
+  #  my_config = DiceMethodTwo::Configuration.new
   #
   # ---
   class Configuration
@@ -59,7 +66,7 @@ module DiceMethodOne
     # * <tt>(self)</tt> The new instance of the class
     #
     # ==== Examples
-    #  DiceMethodOne.roll   #=> Use existing configuration to roll the dice
+    #  DiceMethodTwo.roll   #=> Use existing configuration to roll the dice
     # ---
     def initialize()
       @sides    = DEFAULTS[:sides]
@@ -80,12 +87,9 @@ module DiceMethodOne
   # * <tt>(Integer)</tt> the sum total of all dice thrown/rolled
   #
   # ==== Examples
-  #  DiceMethodOne.roll                           #=> Use existing configuration to roll the dice
+  #  DiceMethodTwo.roll                           #=> Use existing configuration to roll the dice
   # ---
   def self.roll
-    # TODO: test this @configuration = self.configuration   #even though I expected to be able to use @configuration without
-                                          #first calling self.configuration. It doesn't work on first call
-                                          #So for now always access the default config as self.configuration.
     l_total = 0                                 #initialize dice total
     @configuration.num_dice.times do |ctr|      #throw the dice as many times as configured
       l_total += rand(1..@configuration.sides)  #keep a total
@@ -112,11 +116,43 @@ module DiceMethodOne
   # * <tt>(Integer)</tt> returns the number of Player that won
   #
   # ==== Examples
-  #  DiceMethodOne.play                           #=> Use existing configuration to play game
-  #  DiceMethodOne.play( players: 3, num_dice:2)  #=> Play game but use 3 players and 2 dice
+  #  DiceMethodTwo.play                           #=> Use existing configuration to play game
+  #  DiceMethodTwo.play( players: 3, num_dice:2)  #=> Play game but use 3 players and 2 dice
   #
   # ---
   def self.play(p_options = {})
+    attrs_to_setup = NEW_SETTINGS.reject {|k| configuration.respond_to?(k.to_s)}
+
+    unless attrs_to_setup.empty?
+
+      # This isn't how I would set it up in real life, but for demonstration purposes
+      # we will call setup using a hash with defaults if even one attribute was sent.
+      if NEW_SETTINGS.any? { |key| p_options.has_key?(key) }
+        defaults = {}
+        NEW_SETTINGS.each do |k|
+          defaults[k] = p_options[k]
+        end
+        add_new_attributes_no_defaults(defaults)          #pass as a hash to setup
+      else
+        add_new_attributes_no_defaults(attrs_to_setup)    #otherwise, just pass array of attributes to define
+                                                          #after thsis you will be able to access atrributes directly
+                                                          # example self.configuration.color or @configuration.color
+      end
+
+    end
+
+
+    # need_to_add_attributes = !self.configuration.respond_to?('color')
+    # if need_to_add_attributes
+    #   if NEW_SETTINGS.any? { |key| hash.key?(key) }
+    #     NEW_SETTINGS
+    #     add_new_attributes_with_defaults(p_options[:color])
+    #   else
+    #     add_new_attributes_no_defaults()
+    #   end
+    # end
+
+
     # this is a one line way to merge the configuration
     # p_options = self.configuration.instance_values.merge(p_options).symbolize_keys
     # p_options = self.configuration.instance_values.merge(p_options).symbolize_keys
@@ -145,7 +181,8 @@ module DiceMethodOne
 
     # display results
     puts "\nGames is Over: The Winner is Player #{winner+1} with a score of #{scores[winner]}"
-    puts "\nFinal Tally:\n"
+    puts "\tThe games was played with #{p_options[:color]} dice made of #{p_options[:material]}"
+    puts "\n\tFinal Tally:\n"
     scores.sort_and_include_index.reverse.each do |score, player|
         puts "\tPlayer # #{player+1} ==> #{score}"
     end
@@ -164,7 +201,7 @@ module DiceMethodOne
   # * Review the code documentation closely to see the many ways to change the configuration or just temporarily
   #   override the game configuration settings
   #
-  #  DiceMethodOne.simulate_games()  #=> Simulate multiple games with various styles of changed settings.
+  #  DiceMethodTwo.simulate_games()  #=> Simulate multiple games with various styles of changed settings.
   #
   # ==== Returns
   # * <tt>(Array)</tt> An Array of winning players
@@ -173,29 +210,30 @@ module DiceMethodOne
   def self.simulate_games()
     winners = []    #store the winners of each simulation
 
+
     winners << play                                           # Play with Existing Configuration
     winners << play(players: 3, target_score: 50)             # Temporarily override settings
     winners << play(num_dice: 5, target_score: 200, speed: 0) # Temporarily override settings
 
     # Now lets change the actual default configuration using _Style 1:_ *Direct Assign*
-    # DiceMethodOne.configuration.target_score = 20    #directly change the configuration
+    # DiceMethodTwo.configuration.target_score = 20    #directly change the configuration
     # winners << play
 
     # Now lets change the actual default configuration using _Style 2:_ *Variable Assignment*
-    my_config = DiceMethodOne::Configuration.new
+    my_config = DiceMethodTwo::Configuration.new
     my_config.players = 3
     my_config.sides = 12
     my_config.target_score = 50
-    DiceMethodOne.configuration = my_config
+    DiceMethodTwo.configuration = my_config
     winners << play
 
-    DiceMethodOne.reset  #lets reset to make sure we are back to our default values before our next example
+    DiceMethodTwo.reset  #lets reset to make sure we are back to our default values before our next example
 
     # Now lets change the actual default configuration using _Style 3:_ *Block Code Assignment*
     # This is most typically how it would be done in a real-life situation.
     # Generally this would be done in an initializer file often located in the config/initializers of an app
     # But this can be initialized anywhere as you see here.
-    DiceMethodOne.configure do |config|
+    DiceMethodTwo.configure do |config|
       config.players = 5
       config.speed  = 0
       config.sides = 20
@@ -210,6 +248,21 @@ module DiceMethodOne
     end
 
     winners
+  end
+
+  def self.add_new_attributes_no_defaults(attributes)
+    # In this code, we are going to give the dice color and material dynamically using setup
+    # This will add to an existing Configuration class (it will actually create class Configuration if needed)
+    DiceMethodTwo.setup(attributes)
+  end
+
+  def self.add_new_attributes_with_defaults(p_color, p_material)
+    # In this code, we are going to give the dice color and material dynamically using setup
+    # This will add to an existing Configuration class (it will actually create class Configuration if needed)
+    DiceMethodTwo.setup(
+        color:     'Red',
+        material:  'Plastic'
+    )
   end
 
 end

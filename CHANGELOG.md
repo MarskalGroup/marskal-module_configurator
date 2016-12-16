@@ -1,5 +1,14 @@
 # Changelog
 
+#### 0.1.3.wip - MAU `2016-12-15`  
+**Added Example DiceMethodTwo and @added_after**
+
+* Added <tt>DiceMethodTwo</tt> example
+* Add @added_after instance variable
+    * This gets cleared via a call to reset
+        
+---
+
 #### 0.1.2.wip - MAU `2016-12-15`  
 **Added Example DiceMethodOne example**
 
