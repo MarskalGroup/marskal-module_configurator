@@ -7,6 +7,7 @@
 and/or using the setup method to build it dynamically
 * Error trap as needed
 * Document and Test
+* minimize includes on active support
 
 
 #### Future Features
