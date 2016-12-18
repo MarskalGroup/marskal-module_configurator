@@ -1,5 +1,16 @@
 # Changelog
 
+#### 0.2.0.wip - MAU `2016-12-18`  
+** Added Many Major Changes **
+
+* Added <tt>DiceMethodThree</tt> example
+* Now Using more marskal Core Modules
+* Added ability set defaults
+* added multi-level resets
+* This is a wip version and needs more work
+        
+---
+
 #### 0.1.3.wip - MAU `2016-12-15`  
 **Added Example DiceMethodTwo and @added_after**
 

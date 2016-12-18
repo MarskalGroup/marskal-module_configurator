@@ -12,37 +12,47 @@ require 'marskal/core_ext/all'   #TODO. Only grab whats needed? Array, Object?
 module Marskal
   module ModuleConfigurator
       extend ActiveSupport::Concern
-      attr_internal_accessor :established_defaults
-      attr_internal_reader :added_dynamically
+      attr_internal_accessor :added_dynamically, :established_defaults
 
       included do
         @added_dynamically = []
+        # private_class_method :config_class
       end
 
       module ClassMethods
         CONFIGURATION_CLASS_NAME = 'Configuration'
         attr_accessor :configuration
 
-        def setup(p_attributes, p_options = {})
-          p_options.assert_valid_keys(:set_defaults) unless p_options.empty?
-          p_options.provide_default(:set_defaults, false)
+        def setup(*attributes) #, p_options = {})
+#          [:establish_defaults].assert_valid_keys(p_options)
 
+          attributes.flatten!
           l_defaults = {}
-          if p_attributes.is_a?(Hash)
-            l_defaults = p_attributes
-            p_attributes = l_defaults.keys
-          else
-            p_attributes.flatten!
+          if attributes.length == 1 && attributes.first.is_a?(Hash)
+            l_defaults = attributes.first
+            attributes = l_defaults.keys
           end
 
           unless configured?
             self.const_set(CONFIGURATION_CLASS_NAME, Class.new { def new()  end })
           end
 
-          l_new_attributes = p_attributes.reject {|a| @configuration.instance_variable_defined?(:"@#{a.to_s}") || @added_dynamically.include?(a.to_s)}
-          (@added_dynamically << l_new_attributes).flatten!.uniq
+          (@added_dynamically << attributes).flatten!.uniq
 
-          self.configuration.add_attr_accessors(p_attributes)
+          # attributes.each do |k|
+          #   unless self.configuration.respond_to?("#{k.to_s}=")
+          #     config_class.send(:define_method, "#{k}=".to_sym) do |value|
+          #       instance_variable_set("@" + k.to_s, value)
+          #     end
+          #   end
+          #   unless self.configuration.respond_to?(k.to_s)
+          #     config_class.send(:define_method, k.to_sym) do
+          #         instance_variable_get("@" + k.to_s)
+          #       end
+          #     end
+          # end
+
+          self.configuration.add_attr_accessors(attributes)
 
           unless l_defaults.empty?
             configure do |config|
@@ -50,15 +60,14 @@ module Marskal
                 config.send("#{k}=", v)
               end
             end
-            mcfg_set_defaults(l_defaults) if p_options[:set_defaults]
+            # establish_defaults(l_defaults) if p_options[:established_defaults]
           end
           self.configuration
         end
 
         def configuration
           begin
-            # @configuration ||= "#{self.name}::#{CONFIGURATION_CLASS_NAME}".classify.constantize.new
-            @configuration ||= config_class.new
+            @configuration ||= "#{self.name}::#{CONFIGURATION_CLASS_NAME}".classify.constantize.new
           rescue NameError => error
             unless self::const_defined?(CONFIGURATION_CLASS_NAME)
               raise "#{self} included Marskal::Configurator which requires a #{CONFIGURATION_CLASS_NAME} class to be defined. Refer to the gem 'marskal' docs. [#{error}]"
@@ -67,6 +76,15 @@ module Marskal
             end
 
           end
+        end
+
+        def reset()
+          attributes_added_dynamically.each do |l_attr|
+            config_class.send(:undef_method, l_attr.to_sym)
+          end
+          @added_dynamically = []
+          @established_defaults = nil
+          @configuration = config_class.new   #TODO: remove hard coded name
         end
 
         def configure
@@ -81,50 +99,22 @@ module Marskal
           const_defined?(CONFIGURATION_CLASS_NAME)
         end
 
-        def reset(p_options = {})
-          p_options.provide_default(:remove_added_attributes, true)
-          p_options.provide_default(:apply_defaults, true)
-
-          # mcfg_attributes_added.each do |l_attr|
-          #   config_class.send(:undef_method, l_attr.to_sym)
-          # end
-          if p_options[:remove_added_attributes]
-            @configuration.remove_attr_accessors(mcfg_attributes_added)
-            @established_defaults.except!(*@added_dynamically)
-            @added_dynamically = []
-          end
-          @configuration = config_class.new
-          if p_options[:apply_defaults]
-            setup(@established_defaults)
-          end
-        end
-
         def deconfigure
           remove_const(CONFIGURATION_CLASS_NAME)
         end
 
-        def mcfg_set_defaults(p_hash)
-          #error if an undefined attr is sent
-          @established_defaults ||= {}
+        def establish_defaults(p_hash)
+          @defaults ||= {}
           p_hash.each do |k,v|
             @established_defaults[k.to_sym] = v
           end
         end
 
-        def mcfg_remove_selected_defaults(*attributes)
-          z = @established_defaults.except!(*attributes)
+        def defaults
           @established_defaults
         end
 
-        def mcfg_remove_all_defaults
-          @established_defaults = []
-        end
-
-        def mcfg_defaults
-          @established_defaults
-        end
-
-        def mcfg_attributes_added
+        def attributes_added_dynamically
           @added_dynamically.uniq||[]
         end
 

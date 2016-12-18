@@ -1,3 +1,5 @@
+require 'marskal/module_configurator'
+
 ##
 # This module is an example of using *Method 1* of the ModuleConfigurator.
 #
@@ -21,11 +23,11 @@ module DiceMethodOne
       num_dice:     1,
       players:      2,
       speed:        1,
-      target_score: 100
+      target_score: 25
   }
 
   ##
-  # In Method one this module would be COMPLETELY responsible for the donfiguration variables.
+  # In Method one this module would be COMPLETELY responsible for the configuration variables.
   #
   # Note::  Method one is conceptual only. The ModuleConfigurator will work with one or all methods
   #         without specifying a method
@@ -117,16 +119,13 @@ module DiceMethodOne
   #
   # ---
   def self.play(p_options = {})
-    # this is a one line way to merge the configuration
-    # p_options = self.configuration.instance_values.merge(p_options).symbolize_keys
-    # p_options = self.configuration.instance_values.merge(p_options).symbolize_keys
     p_options  = config_override(p_options)  # config_override is  part of ModuleConfigurator
 
     winner = nil                                    #no winner yet
     scores = Array.new(p_options[:players], 0)      #initialize array to keep scores
     who_goes_first = scores.shuffle.first           #Randomly see who goes first
 
-    puts "Player #{who_goes_first + 1} will roll first...\n\n"
+    puts "\nPlayer #{who_goes_first + 1} will roll first...\n\n"
     round = 0                                           #keep track of rounds
     while scores.max < p_options[:target_score] do      # Play until target is reached
       p_options[:players].times do |player|             # loop for each player to score
@@ -160,14 +159,14 @@ module DiceMethodOne
   # ==== History
   # * <tt>Created: 2016-12-16</tt> <b>Mike Urban</b> <mike@marskalgroup.com>
   #
+  # ==== Returns
+  # * <tt>(Array)</tt> An Array of winning players
+  #
   # ==== Examples
   # * Review the code documentation closely to see the many ways to change the configuration or just temporarily
   #   override the game configuration settings
   #
   #  DiceMethodOne.simulate_games()  #=> Simulate multiple games with various styles of changed settings.
-  #
-  # ==== Returns
-  # * <tt>(Array)</tt> An Array of winning players
   #
   # ---
   def self.simulate_games()
@@ -178,8 +177,8 @@ module DiceMethodOne
     winners << play(num_dice: 5, target_score: 200, speed: 0) # Temporarily override settings
 
     # Now lets change the actual default configuration using _Style 1:_ *Direct Assign*
-    # DiceMethodOne.configuration.target_score = 20    #directly change the configuration
-    # winners << play
+    DiceMethodOne.configuration.target_score = 20    #directly change the configuration
+    winners << play
 
     # Now lets change the actual default configuration using _Style 2:_ *Variable Assignment*
     my_config = DiceMethodOne::Configuration.new
@@ -204,7 +203,7 @@ module DiceMethodOne
 
     winners << play
 
-    puts '\nFinal Results:'
+    puts "\nFinal Results:"
     winners.each_with_index do |winner, idx|
       puts "\tThe Winner of Game #{idx + 1} was Player # #{winner}"
     end
