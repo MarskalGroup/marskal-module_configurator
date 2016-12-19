@@ -8,7 +8,7 @@ require 'marskal/module_configurator'
 # defined in the static code.
 # 
 # Instead, we will build/add all attributes dynamically during the loading and/or running process of Ruby.
-# * The Required <tt>class Configuration</tt> will be dynamically created by <tt>ModuleConfiguration.setup</tt> method.
+# * The Required <tt>class Configuration</tt> will be dynamically created by <tt>ModuleConfiguration.mcfg_setup</tt> method.
 # * Additional config options/settings are added on afterwards
 #
 # In this example we have a simple Dice Game to play. The winner is the first one to reach a target score.
@@ -42,8 +42,8 @@ module DiceMethodThree
   # ---
   def self.roll
     l_total = 0                                 #initialize dice total
-    @configuration.num_dice.times do |ctr|      #throw the dice as many times as configured
-      l_total += rand(1..@configuration.sides)  #keep a total
+     @mcfg_config.num_dice.times do |ctr|      #throw the dice as many times as configured
+      l_total += rand(1.. @mcfg_config.sides)  #keep a total
     end
     l_total                                     # Return total of all dice thrown
   end
@@ -71,7 +71,7 @@ module DiceMethodThree
   #
   # ---
   def self.play(p_options = {})
-    p_options  = config_override(p_options)  # config_override is  part of ModuleConfigurator
+    p_options  = mcfg_config_override(p_options)  # mcfg_config_override is  part of ModuleConfigurator
 
     winner = nil                                    #no winner yet
     scores = Array.new(p_options[:players], 0)      #initialize array to keep scores
@@ -129,7 +129,7 @@ module DiceMethodThree
     # To show how the configuration would be built outside of the calling module,
     # I created a separate +DiceThreeExamples+ module to demonstrate
     # We will only call this if the configuration has yet to be defined
-    unless configured?
+    unless mcfg_configured?
       if p_config_style == :configure
         DiceThreeExamples.build_config_using_configure(DEFAULTS)
       else
@@ -146,13 +146,13 @@ module DiceMethodThree
     # Important Note: a rest will remove all the dynamically created attributes
     # but will NOT remove the class Configuration that was created.
     # It simply cleans the slate of settings to be setup as needed for future use.
-    self.reset  #lets reset, in this example all access to settings will be removed since we created them dynamically
+    self.mcfg_reset  #lets reset, in this example all access to settings will be removed since we created them dynamically
 
     #if we want to COMPLETELY remove our custom configuration we can use the ModuleConfigurator's 'deconfgure' method
     #Example:
-    puts self.configured? #returns true if configured
-    self.deconfigure      #lets wipe out the entire configuration
-    puts self.configured? # now is 'false'
+    puts self.mcfg_configured? #returns true if configured
+    self.mcfg_deconfigure      #lets wipe out the entire configuration
+    puts self.mcfg_configured? # now is 'false'
                           # if we now tried self.configuration, we would get an error
 
 
@@ -175,7 +175,7 @@ module DiceThreeExamples
 
   ##
   # This method shows how to dynamically setup a configuration for the module DiceMethodThree. In this style,
-  # only one call to +setup+ is required. Setup will create and add attributes as needed and will set the default values
+  # only one call to +mcfg_setup+ is required. mcfg_setup will create and add attributes as needed and will set the default values
   #
   # ==== History
   # * <tt>Created: 2016-12-17</tt> <b>Mike Urban</b> <mike@marskalgroup.com>
@@ -197,7 +197,7 @@ module DiceThreeExamples
   #
   # ---
   def self.build_config_using_hash(p_settings)
-    DiceMethodThree.setup( {
+    DiceMethodThree.mcfg_setup( {
                                sides:        p_settings[:sides],
                                num_dice:     p_settings[:num_dice],
                                players:      p_settings[:players],
@@ -209,8 +209,8 @@ module DiceThreeExamples
   ##
   # This method shows how to dynamically setup a configuration for the module DiceMethodThree. In this style,
   # two steps are needed,
-  # 1. Step 1: Call to <tt>setup</tt> to define the new settings and provide access.
-  # 2. Step 2: Using a <tt>configure</tt> code block to define the values afterward.
+  # 1. Step 1: Call to <tt>mcfg_setup</tt> to define the new settings and provide access.
+  # 2. Step 2: Using a <tt>mcfg_configure</tt> code block to define the values afterward.
   #
   # ==== History
   # * <tt>Created: 2016-12-17</tt> <b>Mike Urban</b> <mike@marskalgroup.com>
@@ -233,9 +233,9 @@ module DiceThreeExamples
   # ---
   def self.build_config_using_configure(p_settings)
 
-    DiceMethodThree.setup(p_settings.keys)
+    DiceMethodThree.mcfg_setup(p_settings.keys)
 
-    DiceMethodThree.configure do |config|
+    DiceMethodThree.mcfg_configure do |config|
      config.sides =        p_settings[:sides]
      config.num_dice =     p_settings[:num_dice]
      config.players =      p_settings[:players]
@@ -243,7 +243,7 @@ module DiceThreeExamples
      config.target_score = p_settings[:target_score]
     end
 
-    DiceMethodThree.configuration #return the new configuration
+    DiceMethodThree.mcfg_config #return the new configuration
 
   end
 

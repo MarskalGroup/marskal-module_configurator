@@ -1,7 +1,14 @@
 # Changelog
 
+#### 0.2.1.wip - MAU `2016-12-18`  
+**Get Examples working with new method names**
+* Modify Examples for mcfg_* methods
+* Started clean up of docs for the MarskalConfigurator
+* Still need to fix docs for examples and finish up main code docs
+---
+
 #### 0.2.0.wip - MAU `2016-12-18`  
-** Added Many Major Changes **
+**Added Many Major Changes**
 
 * Added <tt>DiceMethodThree</tt> example
 * Now Using more marskal Core Modules

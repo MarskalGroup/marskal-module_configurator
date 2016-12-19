@@ -1,5 +1,5 @@
 module Marskal
   module ModuleConfigurator
-    VERSION = '0.2.0.wip'
+    VERSION = '0.2.1.wip'
   end
 end

@@ -1,21 +1,25 @@
 require 'marskal/module_configurator'
 
 ##
-# This module is an example of using *Method 1* of the ModuleConfigurator.
+# This module is an example of using *Method 2* of the ModuleConfigurator.
 #
-# ==== Method 1
-# In Method 1 the configuration is defined by the calling(including) module
-# * The Required <tt>class Configuration</tt> is defined *completely* by the calling module.
+# ==== Method 2
+# In Method 2, as in Method 1, the configuration is defined by the calling(including) module.
+# However, we will add on attributes dynamically, after the initial configuration.
+# * The Required <tt>class Configuration</tt> is defined by the calling module.
+# * Additional config options/settings are added on afterwards
 # * The *calling module* is the module with the <tt>include Marskal::ModuleConfigurator</tt>
-# * In this case <tt>DiceMethodOne</tt> is the calling module
+# * In this case <tt>DiceMethodFour</tt> is the calling module
 #
 # In this example we have a simple Dice Game to play. The winner is the first one to reach a target score.
 #
 # ==== History
 # * <tt>Created: 2016-12-16</tt> <b>Mike Urban</b> <mike@marskalgroup.com>
 #
-module DiceMethodOne
+module DiceMethodFour
   include Marskal::ModuleConfigurator       #this will provide access to the ModuleConfigurator methods
+
+  self.mcfg_change_configuration_class('MyConfiguration')
 
   # Establish Default values for our configuration
   DEFAULTS = {
@@ -25,6 +29,11 @@ module DiceMethodOne
       speed:        1,
       target_score: 25
   }
+
+  # These attributes will be added dynamically
+  NEW_SETTINGS = [:color, :material]
+
+
 
   ##
   # In Method one this module would be COMPLETELY responsible for the configuration variables.
@@ -39,10 +48,10 @@ module DiceMethodOne
   # * In this example we are not allowing any param overrides, but you could if you desired.
   #
   # ==== Examples
-  #  my_config = DiceMethodOne::Configuration.new
+  #  my_config = DiceMethodFour::MyConfiguration.new
   #
   # ---
-  class Configuration
+  class MyConfiguration
 
     #various settings for our dice game
     attr_accessor :sides, :num_dice, :players, :speed,:target_score
@@ -61,7 +70,7 @@ module DiceMethodOne
     # * <tt>(self)</tt> The new instance of the class
     #
     # ==== Examples
-    #  DiceMethodOne.roll   #=> Use existing configuration to roll the dice
+    #  DiceMethodFour.roll   #=> Use existing configuration to roll the dice
     # ---
     def initialize()
       @sides    = DEFAULTS[:sides]
@@ -82,12 +91,12 @@ module DiceMethodOne
   # * <tt>(Integer)</tt> the sum total of all dice thrown/rolled
   #
   # ==== Examples
-  #  DiceMethodOne.roll                           #=> Use existing configuration to roll the dice
+  #  DiceMethodFour.roll                           #=> Use existing configuration to roll the dice
   # ---
   def self.roll
     l_total = 0                                 #initialize dice total
-     @mcfg_config.num_dice.times do |ctr|      #throw the dice as many times as configured
-      l_total += rand(1.. @mcfg_config.sides)  #keep a total
+    @mcfg_config.num_dice.times do |ctr|      #throw the dice as many times as configured
+      l_total += rand(1..@mcfg_config.sides)  #keep a total
     end
     l_total                                     # Return total of all dice thrown
   end
@@ -111,11 +120,33 @@ module DiceMethodOne
   # * <tt>(Integer)</tt> returns the number of Player that won
   #
   # ==== Examples
-  #  DiceMethodOne.play                           #=> Use existing configuration to play game
-  #  DiceMethodOne.play( players: 3, num_dice:2)  #=> Play game but use 3 players and 2 dice
+  #  DiceMethodFour.play                           #=> Use existing configuration to play game
+  #  DiceMethodFour.play( players: 3, num_dice:2)  #=> Play game but use 3 players and 2 dice
   #
   # ---
   def self.play(p_options = {})
+    # Gather up the settings that have yet to be defined
+    attrs_to_setup = NEW_SETTINGS.reject {|k| @mcfg_config.respond_to?(k.to_s)}
+
+    # Now, add any new fields to our configuration
+    unless attrs_to_setup.empty?
+      # This isn't how I would set it up in real life, but for demonstration purposes
+      # we will call setup using a hash with defaults if even one attribute was sent.
+      if NEW_SETTINGS.any? { |key| p_options.has_key?(key) }
+        defaults = {}
+        NEW_SETTINGS.each do |k|
+          defaults[k] = p_options[k]
+        end
+        add_new_attributes_no_defaults(defaults)          #pass as a hash to setup
+      else
+        add_new_attributes_no_defaults(attrs_to_setup)    #otherwise, just pass array of attributes to define
+                                                          #after this you will be able to access atrributes directly
+                                                          # example self.configuration.color or @mcfg_config.color
+      end
+
+    end
+
+    # this is a one line way to merge the configuration
     p_options  = mcfg_config_override(p_options)  # mcfg_config_override is  part of ModuleConfigurator
 
     winner = nil                                    #no winner yet
@@ -141,13 +172,71 @@ module DiceMethodOne
 
     # display results
     puts "\nGames is Over: The Winner is Player #{winner+1} with a score of #{scores[winner]}"
-    puts "\nFinal Tally:\n"
+    puts "\tThe games was played with #{p_options[:color]} dice made of #{p_options[:material]}"
+    puts "\n\tFinal Tally:\n"
     scores.sort_and_include_index.reverse.each do |score, player|
         puts "\tPlayer # #{player+1} ==> #{score}"
     end
 
     winner+1
 
+  end
+
+  ##
+  # This method shows how to user ModuleConfigurator's +mcfg_setup+ method to add a list of new settings/attributes
+  # *WITHOUT* any defaults.
+  #
+  # Note:: This example simply calls DiceMethodFour.mcfg_setup. Refer to the documentation for that method for more details.
+  #
+  # ==== History
+  # * <tt>Created: 2016-12-16</tt> <b>Mike Urban</b> <mike@marskalgroup.com>
+  #
+  # ==== Returns
+  # * <tt>(MyConfiguration)</tt> Returns the updated configuration
+  #
+  # ==== Examples
+  #   DiceMethodFour.add_new_attributes_no_defaults(:msg, :date, :size)  #adds three new settings to the config of DiceMethodFour
+  #
+  #   # Now these new settings can be set in many ways
+  #   DiceMethodFour.mcfg_config.msg = 'Direct Access Example'   #direct access
+  #
+  #   c = DiceMethodFour.mcfg_config                             #variable
+  #   c.msg = 'Example via a variable'
+  #
+  #   DiceMethodFour.mcfg_configure |config|                        #code block using 'configure' method
+  #       config.msg = 'Example via a code block'
+  #       config.date Date.today
+  #       config.size = 999
+  #   end
+  #
+  # ---
+  def self.add_new_attributes_no_defaults(attributes)
+    DiceMethodFour.mcfg_setup(attributes)
+  end
+
+  ##
+  # This method shows how to user ModuleConfigurator's +mcfg_setup+ method to add a list of new settings/attributes
+  # *WITH* any defaults.
+  #
+  # Note:: This example simply calls DiceMethodFour.mcfg_setup. Refer to the documentation for that method for more details.
+  #
+  # ==== History
+  # * <tt>Created: 2016-12-16</tt> <b>Mike Urban</b> <mike@marskalgroup.com>
+  #
+  # ==== Returns
+  # * <tt>(MyConfiguration)</tt> Returns the updated configuration
+  #
+  # ==== Examples
+  #   DiceMethodFour.add_new_attributes_no_defaults('Red', 'Steel') #instructs to add new attributes and their values
+  #
+  # ---
+  def self.add_new_attributes_with_defaults(p_color, p_material)
+    # In this code, we are going to give the dice color and material dynamically using mcfg_setup
+    # This will add to an existing MyConfiguration class (it will actually create class MyConfiguration if needed)
+    DiceMethodFour.mcfg_setup(
+        color:     'Red',
+        material:  'Plastic'
+    )
   end
 
   ##
@@ -163,43 +252,45 @@ module DiceMethodOne
   # * Review the code documentation closely to see the many ways to change the configuration or just temporarily
   #   override the game configuration settings
   #
-  #  DiceMethodOne.simulate_games()  #=> Simulate multiple games with various styles of changed settings.
+  #  DiceMethodFour.simulate_games()  #=> Simulate multiple games with various styles of changed settings.
   #
   # ---
   def self.simulate_games()
     winners = []    #store the winners of each simulation
 
-    winners << play                                           # Play with Existing Configuration
+
+    winners << play                                           # Play with Existing MyConfiguration
     winners << play(players: 3, target_score: 50)             # Temporarily override settings
     winners << play(num_dice: 5, target_score: 200, speed: 0) # Temporarily override settings
 
     # Now lets change the actual default configuration using _Style 1:_ *Direct Assign*
-    DiceMethodOne.mcfg_config.target_score = 20    #directly change the configuration
-    winners << play
+    # DiceMethodFour.mcfg_config.target_score = 20    #directly change the configuration
+    # winners << play
 
     # Now lets change the actual default configuration using _Style 2:_ *Variable Assignment*
-    my_config = DiceMethodOne::Configuration.new
+    my_config = DiceMethodFour::MyConfiguration.new
     my_config.players = 3
     my_config.sides = 12
     my_config.target_score = 50
-    DiceMethodOne.mcfg_config = my_config
+    DiceMethodFour.mcfg_config = my_config
     winners << play
 
-    DiceMethodOne.mcfg_reset  #lets reset to make sure we are back to our default values before our next example
+    DiceMethodFour.mcfg_reset  #lets reset to make sure we are back to our default values before our next example
 
     # Now lets change the actual default configuration using _Style 3:_ *Block Code Assignment*
     # This is most typically how it would be done in a real-life situation.
     # Generally this would be done in an initializer file often located in the config/initializers of an app
     # But this can be initialized anywhere as you see here.
-    DiceMethodOne.mcfg_configure do |config|
+    DiceMethodFour.mcfg_configure do |config|
       config.players = 5
       config.speed  = 0
       config.sides = 20
       config.target_score = 250
     end
 
-    winners << play
+    winners << play         #add wo winners list
 
+    #display results
     puts "\nFinal Results:"
     winners.each_with_index do |winner, idx|
       puts "\tThe Winner of Game #{idx + 1} was Player # #{winner}"
@@ -208,11 +299,6 @@ module DiceMethodOne
     winners
   end
 
-  alias_method :orig_exit, :exit
-  def exit(code=0)
-    puts "Exiting with code #{code}"
-    orig_exit(code)
-  end
 
 end
 

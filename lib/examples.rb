@@ -1,12 +1,15 @@
 require 'examples/dice_method_one'
 require 'examples/dice_method_two'
 require 'examples/dice_method_three'
+require 'examples/dice_method_four'
 require 'examples/defaults_examples'
 # require 'examples/object'
 
 require 'marskal/module_configurator'
 
-module Junk
+
+
+module Examples
   include Marskal::ModuleConfigurator
 
   class Configuration
@@ -15,6 +18,13 @@ module Junk
     def initialize
       @class_inline_var = 7654
     end
+  end
+
+  def self.run_all
+    DiceMethodOne.simulate_games
+    DiceMethodTwo.simulate_games
+    DiceMethodThree.simulate_games
+    DefaultsExperiments.experiment
   end
 
 

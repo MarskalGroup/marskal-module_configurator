@@ -93,8 +93,8 @@ module DiceMethodTwo
   # ---
   def self.roll
     l_total = 0                                 #initialize dice total
-    @configuration.num_dice.times do |ctr|      #throw the dice as many times as configured
-      l_total += rand(1..@configuration.sides)  #keep a total
+     @mcfg_config.num_dice.times do |ctr|      #throw the dice as many times as configured
+      l_total += rand(1.. @mcfg_config.sides)  #keep a total
     end
     l_total                                     # Return total of all dice thrown
   end
@@ -124,7 +124,7 @@ module DiceMethodTwo
   # ---
   def self.play(p_options = {})
     # Gather up the settings that have yet to be defined
-    attrs_to_setup = NEW_SETTINGS.reject {|k| configuration.respond_to?(k.to_s)}
+    attrs_to_setup = NEW_SETTINGS.reject {|k| @mcfg_config.respond_to?(k.to_s)}
 
     # Now, add any new fields to our configuration
     unless attrs_to_setup.empty?
@@ -139,13 +139,13 @@ module DiceMethodTwo
       else
         add_new_attributes_no_defaults(attrs_to_setup)    #otherwise, just pass array of attributes to define
                                                           #after this you will be able to access atrributes directly
-                                                          # example self.configuration.color or @configuration.color
+                                                          # example self.configuration.color or  @mcfg_config.color
       end
 
     end
 
     # this is a one line way to merge the configuration
-    p_options  = config_override(p_options)  # config_override is  part of ModuleConfigurator
+    p_options  = mcfg_config_override(p_options)  # mcfg_config_override is  part of ModuleConfigurator
 
     winner = nil                                    #no winner yet
     scores = Array.new(p_options[:players], 0)      #initialize array to keep scores
@@ -181,10 +181,10 @@ module DiceMethodTwo
   end
 
   ##
-  # This method shows how to user ModuleConfigurator's +setup+ method to add a list of new settings/attributes
+  # This method shows how to user ModuleConfigurator's +mcfg_setup+ method to add a list of new settings/attributes
   # *WITHOUT* any defaults.
   #
-  # Note:: This example simply calls DiceMethodTwo.setup. Refer to the documentation for that method for more details.
+  # Note:: This example simply calls DiceMethodTwo.mcfg_setup. Refer to the documentation for that method for more details.
   #
   # ==== History
   # * <tt>Created: 2016-12-16</tt> <b>Mike Urban</b> <mike@marskalgroup.com>
@@ -196,12 +196,12 @@ module DiceMethodTwo
   #   DiceMethodTwo.add_new_attributes_no_defaults(:msg, :date, :size)  #adds three new settings to the config of DiceMethodTwo
   #
   #   # Now these new settings can be set in many ways
-  #   DiceMethodTwo.configuration.msg = 'Direct Access Example'   #direct access
+  #   DiceMethodTwo.mcfg_config.msg = 'Direct Access Example'   #direct access
   #
-  #   c = DiceMethodTwo.configuration                             #variable
+  #   c = DiceMethodTwo.mcfg_config                             #variable
   #   c.msg = 'Example via a variable'
   #
-  #   DiceMethodTwo.configure |config|                        #code block using 'configure' method
+  #   DiceMethodTwo.mcfg_configure |config|                        #code block using 'configure' method
   #       config.msg = 'Example via a code block'
   #       config.date Date.today
   #       config.size = 999
@@ -209,14 +209,14 @@ module DiceMethodTwo
   #
   # ---
   def self.add_new_attributes_no_defaults(attributes)
-    DiceMethodTwo.setup(attributes)
+    DiceMethodTwo.mcfg_setup(attributes)
   end
 
   ##
-  # This method shows how to user ModuleConfigurator's +setup+ method to add a list of new settings/attributes
+  # This method shows how to user ModuleConfigurator's +mcfg_setup+ method to add a list of new settings/attributes
   # *WITH* any defaults.
   #
-  # Note:: This example simply calls DiceMethodTwo.setup. Refer to the documentation for that method for more details.
+  # Note:: This example simply calls DiceMethodTwo.mcfg_setup. Refer to the documentation for that method for more details.
   #
   # ==== History
   # * <tt>Created: 2016-12-16</tt> <b>Mike Urban</b> <mike@marskalgroup.com>
@@ -229,9 +229,9 @@ module DiceMethodTwo
   #
   # ---
   def self.add_new_attributes_with_defaults(p_color, p_material)
-    # In this code, we are going to give the dice color and material dynamically using setup
+    # In this code, we are going to give the dice color and material dynamically using mcfg_setup
     # This will add to an existing Configuration class (it will actually create class Configuration if needed)
-    DiceMethodTwo.setup(
+    DiceMethodTwo.mcfg_setup(
         color:     'Red',
         material:  'Plastic'
     )
@@ -262,7 +262,7 @@ module DiceMethodTwo
     winners << play(num_dice: 5, target_score: 200, speed: 0) # Temporarily override settings
 
     # Now lets change the actual default configuration using _Style 1:_ *Direct Assign*
-    # DiceMethodTwo.configuration.target_score = 20    #directly change the configuration
+    # DiceMethodTwo.mcfg_config.target_score = 20    #directly change the configuration
     # winners << play
 
     # Now lets change the actual default configuration using _Style 2:_ *Variable Assignment*
@@ -270,16 +270,16 @@ module DiceMethodTwo
     my_config.players = 3
     my_config.sides = 12
     my_config.target_score = 50
-    DiceMethodTwo.configuration = my_config
+    DiceMethodTwo.mcfg_config = my_config
     winners << play
 
-    DiceMethodTwo.reset  #lets reset to make sure we are back to our default values before our next example
+    DiceMethodTwo.mcfg_reset  #lets reset to make sure we are back to our default values before our next example
 
     # Now lets change the actual default configuration using _Style 3:_ *Block Code Assignment*
     # This is most typically how it would be done in a real-life situation.
     # Generally this would be done in an initializer file often located in the config/initializers of an app
     # But this can be initialized anywhere as you see here.
-    DiceMethodTwo.configure do |config|
+    DiceMethodTwo.mcfg_configure do |config|
       config.players = 5
       config.speed  = 0
       config.sides = 20
